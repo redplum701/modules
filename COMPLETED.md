@@ -12,9 +12,9 @@ Tracks which modules in [`README.md`](./README.md) are finished. Modules are bui
 
 ## Progress
 
-**37 / 100 completed**
+**42 / 100 completed**
 
-- **Next up:** #64 `postal-code-formatter`, #63 `url-parser`, #62 `email-validator`, #61 `luhn-check`, #60 `isbn-validator`
+- **Next up:** #59 `random-id`, #58 `uuid-v4`, #57 `base64`, #56 `query-string`, #55 `event-emitter`
 - **Build order:** #100 → #1
 
 ## Completed
@@ -57,6 +57,11 @@ Tracks which modules in [`README.md`](./README.md) are finished. Modules are bui
 | 67 | [`hiragana-katakana`](./hiragana-katakana/) | 2026-11-09 | Hiragana ⇔ katakana; isHiragana / isKatakana |
 | 66 | [`fullwidth-halfwidth`](./fullwidth-halfwidth/) | 2026-11-09 | Full-width ⇔ half-width letters, digits, symbols, spaces (per-group options) |
 | 65 | [`phone-number-formatter`](./phone-number-formatter/) | 2026-11-09 | Japanese phone numbers; MIC area code list (2026-03-01); +81 support. Known gap: area code 04 |
+| 64 | [`postal-code-formatter`](./postal-code-formatter/) | 2026-11-09 | Japanese postal codes NNN-NNNN; accepts 〒, full-width, odd hyphens; format check only |
+| 63 | [`url-parser`](./url-parser/) | 2026-11-09 | URL parts as a plain object (WHATWG URL); null for invalid input |
+| 62 | [`email-validator`](./email-validator/) | 2026-11-09 | Practical email format check; unicode and lenient-dot options; no quoted/IP forms |
+| 61 | [`luhn-check`](./luhn-check/) | 2026-11-09 | Luhn mod 10 check and check digit calculation |
+| 60 | [`isbn-validator`](./isbn-validator/) | 2026-11-09 | ISBN-10/13 validation and conversion; hyphen positions not checked |
 | 42 | `base-converter` | Before 2026-11-09 | First version done as the starting point. Full version (fractions, negatives, BigInt) is still planned |
 
 ## Update Checklist

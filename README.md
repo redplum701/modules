@@ -1,4 +1,4 @@
-# phone-number-formatter
+# postal-code-formatter
 
 - **Author:** 紅梅 ([@redplum701](https://github.com/redplum701))
 - **Copyright:** © 2026 紅梅
@@ -8,72 +8,45 @@
 
 ## Description
 
-Formats Japanese phone numbers with hyphens. It cleans up messy input (full-width digits, odd hyphens, spaces, parentheses, `+81`), recognizes mobile, IP phone, toll-free, and other service numbers, and places landline hyphens using the official area code list from the Ministry of Internal Affairs and Communications (MIC), as of March 1, 2026.
+Formats Japanese postal codes as `NNN-NNNN`. It accepts messy input such as full-width digits, different kinds of hyphens, spaces, and the postal mark `〒`. It checks the format only (7 digits), not whether the code is actually assigned to an address.
 
 ## Usage
 
 ```js
-import { formatPhoneNumber, parsePhoneNumber, isPhoneNumber } from "./phone-number-formatter.js";
+import { formatPostalCode, parsePostalCode, isPostalCode } from "./postal-code-formatter.js";
 
-formatPhoneNumber("09012345678");            // "090-1234-5678"
-formatPhoneNumber("０９０－１２３４－５６７８");  // "090-1234-5678"
-formatPhoneNumber("03 (1234) 5678");         // "03-1234-5678"
-formatPhoneNumber("0111234567");             // "011-123-4567"  (Sapporo)
-formatPhoneNumber("0422123456");             // "0422-12-3456"  (Musashino)
-formatPhoneNumber("0120123456");             // "0120-123-456"
-formatPhoneNumber("+81 90 1234 5678");       // "090-1234-5678"
+formatPostalCode("1000001");              // "100-0001"
+formatPostalCode("〒１００－０００１");     // "100-0001"
+formatPostalCode("100 0001");             // "100-0001"
+formatPostalCode("100ー0001");            // "100-0001"
+formatPostalCode("1000001", { prefix: true });        // "〒100-0001"
+formatPostalCode("1000001", { separator: "" });       // "1000001"
+formatPostalCode("12345");                // null (not 7 digits)
 
-formatPhoneNumber("09012345678", { international: true }); // "+81 90-1234-5678"
-formatPhoneNumber("09012345678", { separator: " " });      // "090 1234 5678"
-formatPhoneNumber("12345");                  // null (not recognized)
+parsePostalCode("100-0001");
+// { digits: "1000001", upper: "100", lower: "0001" }
 
-parsePhoneNumber("0422123456");
-// { type: "landline", digits: "0422123456", areaCode: "0422",
-//   groups: ["0422", "12", "3456"] }
-
-isPhoneNumber("090-1234-5678");              // true
-isPhoneNumber("090-1234-567");               // false
+isPostalCode("100-0001");                 // true
+isPostalCode("100-00011");                // false
 ```
 
 ## API
 
 | Function | Result |
 |----------|--------|
-| `formatPhoneNumber(input, options?)` | Formatted string, or `null` if not recognized |
-| `parsePhoneNumber(input)` | `{ type, digits, groups, areaCode? }`, or `null` |
-| `isPhoneNumber(input)` | `true` or `false` (never throws) |
+| `formatPostalCode(input, options?)` | Formatted string, or `null` if not a 7-digit postal code |
+| `parsePostalCode(input)` | `{ digits, upper, lower }`, or `null` |
+| `isPostalCode(input)` | `true` or `false` (never throws) |
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `separator` | `"-"` | Text between the groups |
-| `international` | `false` | `+81` form without the leading 0 (`"+81 90-1234-5678"`) |
+| `separator` | `"-"` | Text between the first 3 and last 4 digits |
+| `prefix` | `false` | Add the postal mark `〒` in front |
 
-**Recognized numbers**
-
-| Type | Prefix | Digits | Grouping |
-|------|--------|--------|----------|
-| `landline` | `0` + area code (see below) | 10 | `0AREA-LOCAL-XXXX` |
-| `mobile` | `060` `070` `080` `090` | 11 | `0X0-XXXX-XXXX` |
-| `ip-phone` | `050` | 11 | `050-XXXX-XXXX` |
-| `m2m` | `020` | 11 | `020-XXXX-XXXX` |
-| `toll-free` | `0120` | 10 | `0120-XXX-XXX` |
-| `toll-free` | `0800` | 10 or 11 | `0800-XXX-XXX` / `0800-XXX-XXXX` |
-| `navi-dial` | `0570` | 10 | `0570-XXX-XXX` |
-| `mass-call` | `0180` | 10 | `0180-XXX-XXX` |
-| `info-fee` | `0990` | 10 | `0990-XXX-XXX` |
-
-**Input cleanup:** full-width digits and punctuation (NFKC), spaces, hyphens and dashes (including `ー`), parentheses, dots, and `+81` forms (including `+81 (0)90…`).
-
-**Landline area codes.** The official rule is: area code (1 to 4 digits after the `0`) plus local code always make 5 digits, followed by a 4-digit subscriber number. The module holds the area code list published by the MIC (as of 2026-03-01) and picks the longest area code that matches the start of the number. That puts the hyphens correctly for all areas with one exception:
-
-- **Area code `04`** (Saitama: Tokorozawa, Sayama, Iruma; Chiba: Kashiwa, Noda, Nagareyama, Abiko, Kamogawa) is shared with the digit patterns of `042`–`049`. The area code alone cannot tell them apart; the local codes decide. This module does not hold local codes, so those numbers are grouped like `042-XXX-XXXX` and may be wrong.
-
-**Other notes**
-
-- Hyphen positions are a convention. The MIC defines the numbers and area codes, not where to write hyphens. Mobile and service numbers follow the usual styles.
-- Numbers must include the leading `0` (or `+81`). Short numbers such as `110` or `119` return `null`.
-- Area codes can change. Re-check against the MIC list when you update.
-- Errors: `TypeError` if `input` is not a string (`isPhoneNumber` never throws).
+- Accepted input: 7 digits, or 3 + 4 digits split by one hyphen, dash, `ー`, or spaces. Full-width digits and a leading `〒` are fine.
+- Only the format is checked. The module does not know which codes are assigned. For that you need the data from Japan Post.
+- The older 3-digit and 5-digit codes are not supported.
+- Errors: `TypeError` if `input` is not a string (`isPostalCode` never throws).
 
 ## License
 
@@ -101,7 +74,6 @@ SOFTWARE.
 
 ## References
 
-- Ministry of Internal Affairs and Communications (Japan). 市外局番の一覧 (List of area codes), as of March 1, 2026.. https://www.soumu.go.jp/main_content/000141817.pdf
-- Ministry of Internal Affairs and Communications (Japan). 電話番号に関するQ&A (Telephone number Q&A).. https://www.soumu.go.jp/main_sosiki/joho_tsusin/top/tel_number/q_and_a.html
-- Ministry of Internal Affairs and Communications (Japan). 電気通信番号制度 (Telecommunications numbering).. https://www.soumu.go.jp/main_sosiki/joho_tsusin/top/tel_number/shigai_list.html
+- Japan Post. 郵便番号 (Postal codes).. https://www.post.japanpost.jp/zipcode/
+- Wikipedia. Postal codes in Japan.. https://en.wikipedia.org/wiki/Postal_codes_in_Japan
 - MDN Web Docs. String.prototype.normalize(). Mozilla.. https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/normalize
