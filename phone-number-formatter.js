@@ -173,16 +173,8 @@ export function parsePhoneNumber(input) {
   const digits = toNationalDigits(input);
   if (digits === null) return null;
 
-  // 11-digit numbers: 0X0-XXXX-XXXX
-  const elevenDigitType = ELEVEN_DIGIT_TYPES.get(digits.slice(0, 3));
-  if (digits.length === 11 && elevenDigitType) {
-    return {
-      type: elevenDigitType,
-      digits,
-      groups: [digits.slice(0, 3), digits.slice(3, 7), digits.slice(7)],
-    };
-  }
-
+  // Special services come first: an 11-digit 0800 number starts with the same
+  // three digits as a mobile 080 number, but 080-0XXX-XXXX is not a mobile range.
   // Special services: 0XXX-XXX-XXX (or -XXXX for 11 digits)
   for (const service of SPECIAL_SERVICES) {
     if (digits.startsWith(service.prefix) && service.lengths.includes(digits.length)) {
@@ -192,6 +184,16 @@ export function parsePhoneNumber(input) {
         groups: [digits.slice(0, 4), digits.slice(4, 7), digits.slice(7)],
       };
     }
+  }
+
+  // 11-digit numbers: 0X0-XXXX-XXXX
+  const elevenDigitType = ELEVEN_DIGIT_TYPES.get(digits.slice(0, 3));
+  if (digits.length === 11 && elevenDigitType) {
+    return {
+      type: elevenDigitType,
+      digits,
+      groups: [digits.slice(0, 3), digits.slice(3, 7), digits.slice(7)],
+    };
   }
 
   // Landlines: 10 digits, with hyphens after the area code and local code.

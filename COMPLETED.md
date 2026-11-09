@@ -12,9 +12,9 @@ Tracks which modules in [`README.md`](./README.md) are finished. Modules are bui
 
 ## Progress
 
-**32 / 100 completed**
+**37 / 100 completed**
 
-- **Next up:** #69 `character-counter`, #68 `halfwidth-kana`, #67 `hiragana-katakana`, #66 `fullwidth-halfwidth`, #65 `phone-number-formatter`
+- **Next up:** #64 `postal-code-formatter`, #63 `url-parser`, #62 `email-validator`, #61 `luhn-check`, #60 `isbn-validator`
 - **Build order:** #100 → #1
 
 ## Completed
@@ -52,6 +52,11 @@ Tracks which modules in [`README.md`](./README.md) are finished. Modules are bui
 | 72 | [`truncate`](./truncate/) | 2026-11-09 | Grapheme-safe truncation with ellipsis counted in the limit |
 | 71 | [`sentence-paragraph-count`](./sentence-paragraph-count/) | 2026-11-09 | Sentence count (Intl.Segmenter) and paragraph count (blank-line or line mode) |
 | 70 | [`grapheme-count`](./grapheme-count/) | 2026-11-09 | Grapheme count plus code point, UTF-16, and UTF-8 lengths |
+| 69 | [`character-counter`](./character-counter/) | 2026-11-09 | Character counts, manuscript-paper (genkou-youshi) sheets, reading-time estimate |
+| 68 | [`halfwidth-kana`](./halfwidth-kana/) | 2026-11-09 | Half-width ⇔ full-width katakana with voiced/semi-voiced marks |
+| 67 | [`hiragana-katakana`](./hiragana-katakana/) | 2026-11-09 | Hiragana ⇔ katakana; isHiragana / isKatakana |
+| 66 | [`fullwidth-halfwidth`](./fullwidth-halfwidth/) | 2026-11-09 | Full-width ⇔ half-width letters, digits, symbols, spaces (per-group options) |
+| 65 | [`phone-number-formatter`](./phone-number-formatter/) | 2026-11-09 | Japanese phone numbers; MIC area code list (2026-03-01); +81 support. Known gap: area code 04 |
 | 42 | `base-converter` | Before 2026-11-09 | First version done as the starting point. Full version (fractions, negatives, BigInt) is still planned |
 
 ## Update Checklist

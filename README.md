@@ -1,4 +1,4 @@
-# character-counter
+# phone-number-formatter
 
 - **Author:** 紅梅 ([@redplum701](https://github.com/redplum701))
 - **Copyright:** © 2026 紅梅
@@ -8,51 +8,72 @@
 
 ## Description
 
-Basic text statistics for writers: character counts (by user-perceived character, so an emoji counts once), conversion to *genkou-youshi* (Japanese manuscript paper) sheets, and an estimated reading time that handles Japanese and English together.
+Formats Japanese phone numbers with hyphens. It cleans up messy input (full-width digits, odd hyphens, spaces, parentheses, `+81`), recognizes mobile, IP phone, toll-free, and other service numbers, and places landline hyphens using the official area code list from the Ministry of Internal Affairs and Communications (MIC), as of March 1, 2026.
 
 ## Usage
 
 ```js
-import { countCharacters, manuscriptSheets, estimateReadingTime } from "./character-counter.js";
+import { formatPhoneNumber, parsePhoneNumber, isPhoneNumber } from "./phone-number-formatter.js";
 
-countCharacters("あ い\nう");
-// { characters: 5, charactersWithoutWhitespace: 3, lines: 2 }
+formatPhoneNumber("09012345678");            // "090-1234-5678"
+formatPhoneNumber("０９０－１２３４－５６７８");  // "090-1234-5678"
+formatPhoneNumber("03 (1234) 5678");         // "03-1234-5678"
+formatPhoneNumber("0111234567");             // "011-123-4567"  (Sapporo)
+formatPhoneNumber("0422123456");             // "0422-12-3456"  (Musashino)
+formatPhoneNumber("0120123456");             // "0120-123-456"
+formatPhoneNumber("+81 90 1234 5678");       // "090-1234-5678"
 
-// 400-character manuscript paper (20 x 20)
-manuscriptSheets("あ".repeat(401));
-// { characters: 401, columns: 20, rows: 20, linesUsed: 21,
-//   sheets: 1.05, sheetsRoundedUp: 2 }
+formatPhoneNumber("09012345678", { international: true }); // "+81 90-1234-5678"
+formatPhoneNumber("09012345678", { separator: " " });      // "090 1234 5678"
+formatPhoneNumber("12345");                  // null (not recognized)
 
-manuscriptSheets("あ\n\nい");   // 3 rows: a blank line takes one row
-manuscriptSheets(text, { columns: 40, rows: 30 }); // other paper sizes
+parsePhoneNumber("0422123456");
+// { type: "landline", digits: "0422123456", areaCode: "0422",
+//   groups: ["0422", "12", "3456"] }
 
-estimateReadingTime("あ".repeat(500));
-// { minutes: 1, seconds: 60, cjkCharacters: 500, words: 0 }
-
-estimateReadingTime("Hello world", { wordsPerMinute: 200 });
-// { minutes: 0.01, seconds: 1, cjkCharacters: 0, words: 2 }
+isPhoneNumber("090-1234-5678");              // true
+isPhoneNumber("090-1234-567");               // false
 ```
 
 ## API
 
 | Function | Result |
 |----------|--------|
-| `countCharacters(text)` | `{ characters, charactersWithoutWhitespace, lines }` |
-| `manuscriptSheets(text, options?)` | `{ characters, columns, rows, linesUsed, sheets, sheetsRoundedUp }` |
-| `estimateReadingTime(text, options?)` | `{ minutes, seconds, cjkCharacters, words }` |
+| `formatPhoneNumber(input, options?)` | Formatted string, or `null` if not recognized |
+| `parsePhoneNumber(input)` | `{ type, digits, groups, areaCode? }`, or `null` |
+| `isPhoneNumber(input)` | `true` or `false` (never throws) |
 
-| Option | Function | Default | Description |
-|--------|----------|---------|-------------|
-| `columns` | `manuscriptSheets` | `20` | Characters per row |
-| `rows` | `manuscriptSheets` | `20` | Rows per sheet (20 × 20 = 400 characters) |
-| `charsPerMinute` | `estimateReadingTime` | `500` | Reading speed for Han, Hiragana, Katakana, and Hangul letters |
-| `wordsPerMinute` | `estimateReadingTime` | `238` | Reading speed for other words |
+| Option | Default | Description |
+|--------|---------|-------------|
+| `separator` | `"-"` | Text between the groups |
+| `international` | `false` | `+81` form without the leading 0 (`"+81 90-1234-5678"`) |
 
-- Characters are grapheme clusters. Line breaks count in `characters` but not in `charactersWithoutWhitespace`.
-- Manuscript layout: each line starts a new row, a blank line uses one row, and long lines wrap every `columns` characters. Kinsoku rules (see the planned `kinsoku-line-breaker`) and paragraph indents are not applied, so real sheets may differ slightly.
-- Reading speeds are rules of thumb. 238 words per minute is the average silent reading rate for English non-fiction (Brysbaert, 2019). 500 characters per minute for Japanese is a common estimate, not a measured standard. Change them to suit your readers.
-- Needs `Intl.Segmenter` (Node.js 16+ and all current browsers).
-- Errors: `TypeError` if `text` is not a string, `RangeError` for invalid options.
+**Recognized numbers**
+
+| Type | Prefix | Digits | Grouping |
+|------|--------|--------|----------|
+| `landline` | `0` + area code (see below) | 10 | `0AREA-LOCAL-XXXX` |
+| `mobile` | `060` `070` `080` `090` | 11 | `0X0-XXXX-XXXX` |
+| `ip-phone` | `050` | 11 | `050-XXXX-XXXX` |
+| `m2m` | `020` | 11 | `020-XXXX-XXXX` |
+| `toll-free` | `0120` | 10 | `0120-XXX-XXX` |
+| `toll-free` | `0800` | 10 or 11 | `0800-XXX-XXX` / `0800-XXX-XXXX` |
+| `navi-dial` | `0570` | 10 | `0570-XXX-XXX` |
+| `mass-call` | `0180` | 10 | `0180-XXX-XXX` |
+| `info-fee` | `0990` | 10 | `0990-XXX-XXX` |
+
+**Input cleanup:** full-width digits and punctuation (NFKC), spaces, hyphens and dashes (including `ー`), parentheses, dots, and `+81` forms (including `+81 (0)90…`).
+
+**Landline area codes.** The official rule is: area code (1 to 4 digits after the `0`) plus local code always make 5 digits, followed by a 4-digit subscriber number. The module holds the area code list published by the MIC (as of 2026-03-01) and picks the longest area code that matches the start of the number. That puts the hyphens correctly for all areas with one exception:
+
+- **Area code `04`** (Saitama: Tokorozawa, Sayama, Iruma; Chiba: Kashiwa, Noda, Nagareyama, Abiko, Kamogawa) is shared with the digit patterns of `042`–`049`. The area code alone cannot tell them apart; the local codes decide. This module does not hold local codes, so those numbers are grouped like `042-XXX-XXXX` and may be wrong.
+
+**Other notes**
+
+- Hyphen positions are a convention. The MIC defines the numbers and area codes, not where to write hyphens. Mobile and service numbers follow the usual styles.
+- Numbers must include the leading `0` (or `+81`). Short numbers such as `110` or `119` return `null`.
+- Area codes can change. Re-check against the MIC list when you update.
+- Errors: `TypeError` if `input` is not a string (`isPhoneNumber` never throws).
 
 ## License
 
@@ -80,7 +101,7 @@ SOFTWARE.
 
 ## References
 
-- MDN Web Docs. Intl.Segmenter. Mozilla.. https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/Segmenter
-- Unicode Consortium. Unicode Standard Annex #29: Unicode Text Segmentation.. https://unicode.org/reports/tr29/
-- Brysbaert, M. How many words do we read per minute? A review and meta-analysis of reading rate. Journal of Memory and Language, 109 (2019).. https://doi.org/10.1016/j.jml.2019.104047
-- MDN Web Docs. Unicode character class escape. Mozilla.. https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Unicode_character_class_escape
+- Ministry of Internal Affairs and Communications (Japan). 市外局番の一覧 (List of area codes), as of March 1, 2026.. https://www.soumu.go.jp/main_content/000141817.pdf
+- Ministry of Internal Affairs and Communications (Japan). 電話番号に関するQ&A (Telephone number Q&A).. https://www.soumu.go.jp/main_sosiki/joho_tsusin/top/tel_number/q_and_a.html
+- Ministry of Internal Affairs and Communications (Japan). 電気通信番号制度 (Telecommunications numbering).. https://www.soumu.go.jp/main_sosiki/joho_tsusin/top/tel_number/shigai_list.html
+- MDN Web Docs. String.prototype.normalize(). Mozilla.. https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/normalize
