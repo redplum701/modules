@@ -1,4 +1,4 @@
-# flatten
+# palindrome-check
 
 - **Author:** 紅梅 ([@redplum701](https://github.com/redplum701))
 - **Copyright:** © 2026 紅梅
@@ -8,43 +8,47 @@
 
 ## Description
 
-Flattens nested arrays into a single array, down to a chosen depth (or all the way with `Infinity`). It works like the built-in `Array.prototype.flat`, but uses a loop instead of recursion, so extremely deep nesting cannot overflow the call stack, and it reports circular references with a clear error.
+Checks whether text reads the same forward and backward. By default it ignores case, spaces, and punctuation, and it compares whole user-perceived characters (grapheme clusters), so emoji and accented letters are not split apart. Works with Japanese too (`たけやぶやけた`).
 
 ## Usage
 
 ```js
-import { flatten } from "./flatten.js";
+import { isPalindrome } from "./palindrome-check.js";
 
-flatten([1, [2, [3, [4]]]]);           // [1, 2, [3, [4]]]  (depth 1)
-flatten([1, [2, [3, [4]]]], 2);        // [1, 2, 3, [4]]
-flatten([1, [2, [3, [4]]]], Infinity); // [1, 2, 3, 4]
-flatten([1, [2]], 0);                  // [1, [2]] (a copy)
+isPalindrome("A man, a plan, a canal: Panama"); // true
+isPalindrome("race a car");                     // false
+isPalindrome("たけやぶやけた");                   // true
 
-// Very deep nesting is fine
-let deep = [1];
-for (let i = 0; i < 100000; i++) deep = [deep];
-flatten(deep, Infinity);               // [1]
+isPalindrome("Aa");                             // true
+isPalindrome("Aa", { ignoreCase: false });      // false
 
-// Circular references throw a clear error
-const loop = [1];
-loop.push(loop);
-flatten(loop, Infinity);               // TypeError
+// Keep punctuation and spaces in the comparison
+isPalindrome("ab ba", { ignoreNonAlphanumeric: false });  // true
+isPalindrome("ab, ba", { ignoreNonAlphanumeric: false }); // false
+
+// Treat accented letters like plain ones
+isPalindrome("éAae");                           // false
+isPalindrome("éAae", { ignoreAccents: true });  // true
+
+// Emoji clusters stay whole
+isPalindrome("👨‍👩‍👧‍👦x👨‍👩‍👧‍👦", { ignoreNonAlphanumeric: false }); // true
 ```
 
 ## API
 
-`flatten(array, depth = 1)`
+`isPalindrome(text, options?)`
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `array` | Array | The array to flatten |
-| `depth` | integer ≥ 0, or `Infinity` | Levels to flatten. Default `1` |
+| Option | Default | Description |
+|--------|---------|-------------|
+| `ignoreCase` | `true` | Treat uppercase and lowercase as equal |
+| `ignoreNonAlphanumeric` | `true` | Ignore spaces, punctuation, symbols, and emoji |
+| `ignoreAccents` | `false` | Treat `é` and `e` as equal |
 
-- Returns a new array. The original is not changed.
-- Empty slots in sparse arrays are skipped (same as `Array.prototype.flat`).
-- Only arrays are flattened. Array-likes, Sets, and strings are left as they are.
-- Circular references throw `TypeError`.
-- Errors: `TypeError` if `array` is not an array, `RangeError` if `depth` is negative, fractional, or `NaN`.
+- Letters and numbers from any script count (`\p{L}` and `\p{N}`), so Japanese, Greek, and so on work.
+- An empty string, a single character, or text that is empty after cleaning returns `true`.
+- Comparison uses grapheme clusters, so a family emoji or `e` plus a combining accent is treated as one character.
+- Needs `Intl.Segmenter` (Node.js 16+ and all current browsers).
+- Errors: `TypeError` if `text` is not a string.
 
 ## License
 
@@ -72,6 +76,7 @@ SOFTWARE.
 
 ## References
 
-- MDN Web Docs. Array.prototype.flat(). Mozilla.. https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/flat
-- MDN Web Docs. Array.isArray(). Mozilla.. https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/isArray
-- Wikipedia. Depth-first search.. https://en.wikipedia.org/wiki/Depth-first_search
+- Wikipedia. Palindrome.. https://en.wikipedia.org/wiki/Palindrome
+- MDN Web Docs. String.prototype.normalize(). Mozilla.. https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/normalize
+- MDN Web Docs. Intl.Segmenter. Mozilla.. https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/Segmenter
+- Unicode Consortium. Unicode Standard Annex #29: Unicode Text Segmentation.. https://unicode.org/reports/tr29/

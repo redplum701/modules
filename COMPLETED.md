@@ -12,9 +12,9 @@ Tracks which modules in [`README.md`](./README.md) are finished. Modules are bui
 
 ## Progress
 
-**27 / 100 completed**
+**32 / 100 completed**
 
-- **Next up:** #74 `palindrome-check`, #73 `reverse-string`, #72 `truncate`, #71 `sentence-paragraph-count`, #70 `grapheme-count`
+- **Next up:** #69 `character-counter`, #68 `halfwidth-kana`, #67 `hiragana-katakana`, #66 `fullwidth-halfwidth`, #65 `phone-number-formatter`
 - **Build order:** #100 → #1
 
 ## Completed
@@ -47,6 +47,11 @@ Tracks which modules in [`README.md`](./README.md) are finished. Modules are bui
 | 77 | [`unique`](./unique/) | 2026-11-09 | Remove duplicates, keeping the first; optional key function |
 | 76 | [`chunk`](./chunk/) | 2026-11-09 | Split an array into chunks of a given size |
 | 75 | [`char-frequency`](./char-frequency/) | 2026-11-09 | Character counts by code point; most-common helper |
+| 74 | [`palindrome-check`](./palindrome-check/) | 2026-11-09 | Palindrome check by grapheme; case, punctuation, accent options |
+| 73 | [`reverse-string`](./reverse-string/) | 2026-11-09 | Grapheme-safe string reversal |
+| 72 | [`truncate`](./truncate/) | 2026-11-09 | Grapheme-safe truncation with ellipsis counted in the limit |
+| 71 | [`sentence-paragraph-count`](./sentence-paragraph-count/) | 2026-11-09 | Sentence count (Intl.Segmenter) and paragraph count (blank-line or line mode) |
+| 70 | [`grapheme-count`](./grapheme-count/) | 2026-11-09 | Grapheme count plus code point, UTF-16, and UTF-8 lengths |
 | 42 | `base-converter` | Before 2026-11-09 | First version done as the starting point. Full version (fractions, negatives, BigInt) is still planned |
 
 ## Update Checklist
