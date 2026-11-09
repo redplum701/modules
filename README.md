@@ -1,4 +1,4 @@
-# palindrome-check
+# character-counter
 
 - **Author:** 紅梅 ([@redplum701](https://github.com/redplum701))
 - **Copyright:** © 2026 紅梅
@@ -8,47 +8,51 @@
 
 ## Description
 
-Checks whether text reads the same forward and backward. By default it ignores case, spaces, and punctuation, and it compares whole user-perceived characters (grapheme clusters), so emoji and accented letters are not split apart. Works with Japanese too (`たけやぶやけた`).
+Basic text statistics for writers: character counts (by user-perceived character, so an emoji counts once), conversion to *genkou-youshi* (Japanese manuscript paper) sheets, and an estimated reading time that handles Japanese and English together.
 
 ## Usage
 
 ```js
-import { isPalindrome } from "./palindrome-check.js";
+import { countCharacters, manuscriptSheets, estimateReadingTime } from "./character-counter.js";
 
-isPalindrome("A man, a plan, a canal: Panama"); // true
-isPalindrome("race a car");                     // false
-isPalindrome("たけやぶやけた");                   // true
+countCharacters("あ い\nう");
+// { characters: 5, charactersWithoutWhitespace: 3, lines: 2 }
 
-isPalindrome("Aa");                             // true
-isPalindrome("Aa", { ignoreCase: false });      // false
+// 400-character manuscript paper (20 x 20)
+manuscriptSheets("あ".repeat(401));
+// { characters: 401, columns: 20, rows: 20, linesUsed: 21,
+//   sheets: 1.05, sheetsRoundedUp: 2 }
 
-// Keep punctuation and spaces in the comparison
-isPalindrome("ab ba", { ignoreNonAlphanumeric: false });  // true
-isPalindrome("ab, ba", { ignoreNonAlphanumeric: false }); // false
+manuscriptSheets("あ\n\nい");   // 3 rows: a blank line takes one row
+manuscriptSheets(text, { columns: 40, rows: 30 }); // other paper sizes
 
-// Treat accented letters like plain ones
-isPalindrome("éAae");                           // false
-isPalindrome("éAae", { ignoreAccents: true });  // true
+estimateReadingTime("あ".repeat(500));
+// { minutes: 1, seconds: 60, cjkCharacters: 500, words: 0 }
 
-// Emoji clusters stay whole
-isPalindrome("👨‍👩‍👧‍👦x👨‍👩‍👧‍👦", { ignoreNonAlphanumeric: false }); // true
+estimateReadingTime("Hello world", { wordsPerMinute: 200 });
+// { minutes: 0.01, seconds: 1, cjkCharacters: 0, words: 2 }
 ```
 
 ## API
 
-`isPalindrome(text, options?)`
+| Function | Result |
+|----------|--------|
+| `countCharacters(text)` | `{ characters, charactersWithoutWhitespace, lines }` |
+| `manuscriptSheets(text, options?)` | `{ characters, columns, rows, linesUsed, sheets, sheetsRoundedUp }` |
+| `estimateReadingTime(text, options?)` | `{ minutes, seconds, cjkCharacters, words }` |
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `ignoreCase` | `true` | Treat uppercase and lowercase as equal |
-| `ignoreNonAlphanumeric` | `true` | Ignore spaces, punctuation, symbols, and emoji |
-| `ignoreAccents` | `false` | Treat `é` and `e` as equal |
+| Option | Function | Default | Description |
+|--------|----------|---------|-------------|
+| `columns` | `manuscriptSheets` | `20` | Characters per row |
+| `rows` | `manuscriptSheets` | `20` | Rows per sheet (20 × 20 = 400 characters) |
+| `charsPerMinute` | `estimateReadingTime` | `500` | Reading speed for Han, Hiragana, Katakana, and Hangul letters |
+| `wordsPerMinute` | `estimateReadingTime` | `238` | Reading speed for other words |
 
-- Letters and numbers from any script count (`\p{L}` and `\p{N}`), so Japanese, Greek, and so on work.
-- An empty string, a single character, or text that is empty after cleaning returns `true`.
-- Comparison uses grapheme clusters, so a family emoji or `e` plus a combining accent is treated as one character.
+- Characters are grapheme clusters. Line breaks count in `characters` but not in `charactersWithoutWhitespace`.
+- Manuscript layout: each line starts a new row, a blank line uses one row, and long lines wrap every `columns` characters. Kinsoku rules (see the planned `kinsoku-line-breaker`) and paragraph indents are not applied, so real sheets may differ slightly.
+- Reading speeds are rules of thumb. 238 words per minute is the average silent reading rate for English non-fiction (Brysbaert, 2019). 500 characters per minute for Japanese is a common estimate, not a measured standard. Change them to suit your readers.
 - Needs `Intl.Segmenter` (Node.js 16+ and all current browsers).
-- Errors: `TypeError` if `text` is not a string.
+- Errors: `TypeError` if `text` is not a string, `RangeError` for invalid options.
 
 ## License
 
@@ -76,7 +80,7 @@ SOFTWARE.
 
 ## References
 
-- Wikipedia. Palindrome.. https://en.wikipedia.org/wiki/Palindrome
-- MDN Web Docs. String.prototype.normalize(). Mozilla.. https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/normalize
 - MDN Web Docs. Intl.Segmenter. Mozilla.. https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/Segmenter
 - Unicode Consortium. Unicode Standard Annex #29: Unicode Text Segmentation.. https://unicode.org/reports/tr29/
+- Brysbaert, M. How many words do we read per minute? A review and meta-analysis of reading rate. Journal of Memory and Language, 109 (2019).. https://doi.org/10.1016/j.jml.2019.104047
+- MDN Web Docs. Unicode character class escape. Mozilla.. https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Unicode_character_class_escape
