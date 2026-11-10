@@ -1,4 +1,4 @@
-# random-id
+# closing-date
 
 - **Author:** 紅梅 ([@redplum701](https://github.com/redplum701))
 - **Copyright:** © 2026 紅梅
@@ -8,49 +8,68 @@
 
 ## Description
 
-Generates random IDs from a chosen set of characters, using the Web Crypto random number generator (`crypto.getRandomValues`). Every character is equally likely: unbiased rejection sampling avoids the "modulo bias" of the common `randomValue % alphabetSize` shortcut.
+Closing-date (*shimebi*, 締め日) calculations for invoicing. It finds which closing date a transaction belongs to ("end of month", "the 20th"), the billing period around it, and the payment date ("closes at month end, paid at the end of next month"). Payment dates that fall on a weekend or holiday can be moved to the next or previous business day. Dates are handled as plain calendar dates, so time zones never shift the result.
 
 ## Usage
 
 ```js
-import { randomId, CHARSETS } from "./random-id.js";
+import { closingDate, billingPeriod, paymentDate } from "./closing-date.js";
 
-randomId();                              // e.g. "V1StGXR8Z5jdHi6BmyTq4" (21 characters)
-randomId(8);                             // e.g. "q7Kd9XpA"
-randomId(6, { charset: "numeric" });     // e.g. "480192"  (a one-time code)
-randomId(12, { charset: "hex" });        // e.g. "9f2c04ab71de"
-randomId(10, { charset: "unambiguous" });// no 0 O 1 I l
-randomId(5, { alphabet: "ABCDEFGHJKLMNPQRSTUVWXYZ23456789" });
+// 月末締め
+closingDate("2026-11-10", "end").iso;        // "2026-11-30"
+closingDate("2026-02-15", "end").iso;        // "2026-02-28"
 
-console.log(Object.keys(CHARSETS));
-// ["alphanumeric", "url-safe", "numeric", "lowercase", "uppercase",
-//  "lowercase-alphanumeric", "hex", "unambiguous"]
+// 20日締め
+closingDate("2026-11-20", 20).iso;           // "2026-11-20" (the closing day itself is included)
+closingDate("2026-11-21", 20).iso;           // "2026-12-20"
+closingDate("2026-12-21", 20).iso;           // "2027-01-20"
+
+// 31日締め is the same as month end, in every month
+closingDate("2026-11-01", 31).iso;           // "2026-11-30"
+
+billingPeriod("2026-11-25", 20);
+// { start: { iso: "2026-11-21", ... }, end: { iso: "2026-12-20", ... } }
+
+// 月末締め 翌月末払い
+paymentDate("2026-11-10", "end").iso;        // "2026-12-31"
+
+// 20日締め 翌月10日払い
+paymentDate("2026-11-21", 20, { paymentDay: 10 }).iso;   // "2027-01-10"
+
+// 月末締め 翌々月15日払い
+paymentDate("2026-11-10", "end", { monthsLater: 2, paymentDay: 15 }).iso; // "2027-01-15"
+
+// Move a payment that falls on a weekend or holiday
+paymentDate("2026-10-10", "end", { paymentDay: 15, adjust: "next" });
+// 2026-11-15 is a Sunday: { iso: "2026-11-16", adjusted: true, ... }
+paymentDate("2026-10-10", "end", { paymentDay: 15, adjust: "previous" }).iso; // "2026-11-13"
+paymentDate("2026-10-10", "end", { paymentDay: 24, adjust: "next", holidays: ["2026-11-24"] }).iso; // "2026-11-25"
 ```
 
 ## API
 
-`randomId(length = 21, options?)`
+All functions take a date as a `Date` (read in the local time zone), a `"YYYY-MM-DD"` string, or `{ year, month, day }`. Results are `{ year, month, day, iso }`.
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `charset` | `"alphanumeric"` | A name from `CHARSETS` |
-| `alphabet` | — | Your own characters (2 to 65,536, no repeats). Use instead of `charset` |
-| `getRandomValues` | `crypto.getRandomValues` | Fills a `Uint32Array`. Replace for testing only |
+| Function | Result |
+|----------|--------|
+| `closingDate(date, closingDay)` | The first closing date on or after `date` |
+| `billingPeriod(date, closingDay)` | `{ start, end }`: the day after the previous closing date, through the closing date |
+| `paymentDate(date, closingDay, options?)` | The payment date, with an extra `adjusted` field |
 
-| Charset | Characters | Size |
-|---------|-----------|------|
-| `alphanumeric` | `A–Z a–z 0–9` | 62 |
-| `url-safe` | `A–Z a–z 0–9 _ -` | 64 |
-| `numeric` | `0–9` | 10 |
-| `lowercase` / `uppercase` | `a–z` / `A–Z` | 26 |
-| `lowercase-alphanumeric` | `0–9 a–z` | 36 |
-| `hex` | `0–9 a–f` | 16 |
-| `unambiguous` | letters and digits without `0 O 1 I l` | 57 |
+`closingDay` is `1`–`31` or `"end"` (month end). A day past the end of a short month means that month's last day, so `31` and `"end"` are the same, and `30` in February is the 28th or 29th.
 
-- **How random is it?** Each character adds `log2(alphabet size)` bits: about 5.95 for the 62-character default. 21 characters give about 125 bits, which is plenty to avoid collisions without checking. Short IDs (such as 6 digits) are only suitable when you check for duplicates.
-- **Unbiased:** random 32-bit numbers in the uneven leftover range are rejected instead of folded in with `%`. Every character is equally likely.
-- Uses Web Crypto: Node.js 19+ (global `crypto`) and all current browsers. On older Node.js, pass `getRandomValues` or set `globalThis.crypto`.
-- Errors: `TypeError` for wrong types, `RangeError` for a bad `length` (1 to 100,000), unknown `charset`, or an invalid `alphabet`.
+| Option (`paymentDate`) | Default | Description |
+|------------------------|---------|-------------|
+| `monthsLater` | `1` | Months after the closing month (`0` = same month, `2` = the month after next) |
+| `paymentDay` | `"end"` | `1`–`31` or `"end"`, with the same rule for short months |
+| `adjust` | `"none"` | `"next"` or `"previous"`: move a payment on a Saturday, Sunday, or holiday to the next or previous business day (it can cross into another month) |
+| `holidays` | — | Dates to treat as non-business days (any accepted form). Weekends always count |
+
+- A transaction **on** the closing day belongs to that closing (`closingDate("2026-11-20", 20)` is November 20).
+- Everything works on calendar dates (year, month, day), never on times of day, so time zones and daylight saving cannot move a result.
+- Years 1000 to 9999 are supported.
+- There is no built-in holiday list. Japanese public holidays change, so pass your own list. For general business-day arithmetic, see the planned `business-days` module.
+- Errors: `TypeError` for unsupported types. `RangeError` for invalid calendar dates (`"2026-02-30"`), an invalid `closingDay`, `paymentDay`, `monthsLater`, or `adjust`, or a result outside the supported years.
 
 ## License
 
@@ -78,7 +97,6 @@ SOFTWARE.
 
 ## References
 
-- MDN Web Docs. Crypto: getRandomValues() method. Mozilla.. https://developer.mozilla.org/en-US/docs/Web/API/Crypto/getRandomValues
-- Wikipedia. Rejection sampling.. https://en.wikipedia.org/wiki/Rejection_sampling
-- Wikipedia. Fisher-Yates shuffle: modulo bias.. https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle#Modulo_bias
-- Ai, A. Nano ID (a similar, popular ID generator, for comparison).. https://github.com/ai/nanoid
+- ISO. ISO 8601: Date and time format (calendar dates, YYYY-MM-DD).. https://en.wikipedia.org/wiki/ISO_8601
+- Wikipedia. Invoice.. https://en.wikipedia.org/wiki/Invoice
+- MDN Web Docs. Date.UTC(). Mozilla.. https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/UTC
