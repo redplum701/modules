@@ -12,9 +12,9 @@ Tracks which modules in [`README.md`](./README.md) are finished. Modules are bui
 
 ## Progress
 
-**47 / 100 completed**
+**57 / 100 completed**
 
-- **Next up:** #54 `memoize`, #53 `promise-timeout`, #52 `retry`, #51 `throttle`, #50 `debounce`
+- **Next up:** #44 `iso-week-number`, #43 `date-diff`, #42 `base-converter` (full version), #41 `fibonacci`, #40 `combinatorics`
 - **Build order:** #100 → #1
 
 ## Completed
@@ -67,6 +67,16 @@ Tracks which modules in [`README.md`](./README.md) are finished. Modules are bui
 | 57 | [`base64`](./base64/) | 2026-11-09 | UTF-8 safe Base64; standard/URL-safe, padding optional; bytes in and out |
 | 56 | [`query-string`](./query-string/) | 2026-11-09 | Query string parse/build with arrays, nesting, prototype-pollution safety |
 | 55 | [`event-emitter`](./event-emitter/) | 2026-11-09 | on / once / off / emit; symbol events; all listeners run even if one throws |
+| 54 | [`memoize`](./memoize/) | 2026-11-09 | Content-based cache keys; LRU maxSize; ttl; async-safe (failed promises not cached) |
+| 53 | [`promise-timeout`](./promise-timeout/) | 2026-11-09 | withTimeout with TimeoutError and AbortSignal for the work |
+| 52 | [`retry`](./retry/) | 2026-11-09 | Exponential backoff with jitter modes; shouldRetry; AbortSignal; backoffDelay |
+| 51 | [`throttle`](./throttle/) | 2026-11-09 | At most once per wait (leading/trailing); cancel, flush, pending |
+| 50 | [`debounce`](./debounce/) | 2026-11-09 | Trailing/leading, maxWait; cancel, flush, pending |
+| 49 | [`object-path`](./object-path/) | 2026-11-09 | get / has / set / unset by path (a.b[0].c, quoted keys); own-property only, pollution-safe |
+| 48 | [`deep-merge`](./deep-merge/) | 2026-11-09 | Recursive merge into a new object; 4 array strategies; no shared references; cycle detection |
+| 47 | [`sort-by`](./sort-by/) | 2026-11-09 | Stable multi-key sort; asc/desc per key; nulls first/last; locale and numeric options |
+| 46 | [`group-by`](./group-by/) | 2026-11-09 | groupBy (object) and groupByMap (Map); matches the standard Object.groupBy |
+| 45 | [`closing-date`](./closing-date/) | 2026-11-09 | 締め日: closing date, billing period, payment date; weekend/holiday adjustment |
 | 42 | `base-converter` | Before 2026-11-09 | First version done as the starting point. Full version (fractions, negatives, BigInt) is still planned |
 
 ## Update Checklist

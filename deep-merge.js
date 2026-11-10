@@ -62,11 +62,18 @@ function define(object, key, value) {
   Object.defineProperty(object, key, { value, enumerable: true, writable: true, configurable: true });
 }
 
-function enter(container, ancestors) {
-  if (ancestors.has(container)) {
+// A circular reference means an object that contains itself. The objects being
+// walked are tracked separately for each side, so the same (shared) object may
+// safely appear on both sides, such as in deepMerge(x, x).
+function newContext() {
+  return { target: new Set(), source: new Set() };
+}
+
+function enter(container, open) {
+  if (open.has(container)) {
     throw new TypeError("deepMerge: circular reference found.");
   }
-  ancestors.add(container);
+  open.add(container);
 }
 
 // Copies arrays and plain objects deeply. Everything else (Date, Map, class
@@ -87,13 +94,13 @@ function clone(value, ancestors) {
   return copy;
 }
 
-function mergeArrays(target, source, options, ancestors) {
+function mergeArrays(target, source, options, context) {
   switch (options.arrays) {
     case "concat":
-      return [...clone(target, ancestors), ...clone(source, ancestors)];
+      return [...clone(target, context.target), ...clone(source, context.source)];
     case "union": {
       const seen = new Set();
-      return [...clone(target, ancestors), ...clone(source, ancestors)].filter((item) => {
+      return [...clone(target, context.target), ...clone(source, context.source)].filter((item) => {
         if (seen.has(item)) return false;
         seen.add(item);
         return true;
@@ -101,28 +108,28 @@ function mergeArrays(target, source, options, ancestors) {
     }
     case "index": {
       const length = Math.max(target.length, source.length);
-      enter(target, ancestors);
-      enter(source, ancestors);
+      enter(target, context.target);
+      enter(source, context.source);
       const merged = Array.from({ length }, (_, i) => {
-        if (i >= target.length) return clone(source[i], ancestors);
-        if (i >= source.length) return clone(target[i], ancestors);
-        return merge(target[i], source[i], options, ancestors);
+        if (i >= target.length) return clone(source[i], context.source);
+        if (i >= source.length) return clone(target[i], context.target);
+        return merge(target[i], source[i], options, context);
       });
-      ancestors.delete(target);
-      ancestors.delete(source);
+      context.target.delete(target);
+      context.source.delete(source);
       return merged;
     }
     default: // "replace"
-      return clone(source, ancestors);
+      return clone(source, context.source);
   }
 }
 
-function merge(target, source, options, ancestors) {
-  if (source === undefined && options.skipUndefined) return clone(target, ancestors);
+function merge(target, source, options, context) {
+  if (source === undefined && options.skipUndefined) return clone(target, context.target);
 
   if (isPlainObject(target) && isPlainObject(source)) {
-    enter(target, ancestors);
-    enter(source, ancestors);
+    enter(target, context.target);
+    enter(source, context.source);
 
     const sourceKeys = new Set(Object.keys(source));
     const result = {};
@@ -131,26 +138,26 @@ function merge(target, source, options, ancestors) {
         result,
         key,
         sourceKeys.has(key)
-          ? merge(target[key], source[key], options, ancestors)
-          : clone(target[key], ancestors)
+          ? merge(target[key], source[key], options, context)
+          : clone(target[key], context.target)
       );
     }
     for (const key of sourceKeys) {
       if (Object.hasOwn(result, key)) continue; // already merged above
       if (source[key] === undefined && options.skipUndefined) continue;
-      define(result, key, clone(source[key], ancestors));
+      define(result, key, clone(source[key], context.source));
     }
 
-    ancestors.delete(target);
-    ancestors.delete(source);
+    context.target.delete(target);
+    context.source.delete(source);
     return result;
   }
 
   if (Array.isArray(target) && Array.isArray(source)) {
-    return mergeArrays(target, source, options, ancestors);
+    return mergeArrays(target, source, options, context);
   }
 
-  return clone(source, ancestors); // anything else: the source wins
+  return clone(source, context.source); // anything else: the source wins
 }
 
 function readOptions(options) {
@@ -190,7 +197,7 @@ function readOptions(options) {
  * @throws {RangeError} If options.arrays is unknown.
  */
 export function deepMerge(target, source, options = {}) {
-  return merge(target, source, readOptions(options), new Set());
+  return merge(target, source, readOptions(options), newContext());
 }
 
 /**
@@ -207,5 +214,5 @@ export function deepMergeAll(values, options = {}) {
   }
   const settings = readOptions(options);
   if (values.length === 0) return {};
-  return values.reduce((result, value) => merge(result, value, settings, new Set()), undefined);
+  return values.reduce((result, value) => merge(result, value, settings, newContext()), undefined);
 }
