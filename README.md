@@ -1,4 +1,4 @@
-# postal-code-formatter
+# random-id
 
 - **Author:** 紅梅 ([@redplum701](https://github.com/redplum701))
 - **Copyright:** © 2026 紅梅
@@ -8,45 +8,49 @@
 
 ## Description
 
-Formats Japanese postal codes as `NNN-NNNN`. It accepts messy input such as full-width digits, different kinds of hyphens, spaces, and the postal mark `〒`. It checks the format only (7 digits), not whether the code is actually assigned to an address.
+Generates random IDs from a chosen set of characters, using the Web Crypto random number generator (`crypto.getRandomValues`). Every character is equally likely: unbiased rejection sampling avoids the "modulo bias" of the common `randomValue % alphabetSize` shortcut.
 
 ## Usage
 
 ```js
-import { formatPostalCode, parsePostalCode, isPostalCode } from "./postal-code-formatter.js";
+import { randomId, CHARSETS } from "./random-id.js";
 
-formatPostalCode("1000001");              // "100-0001"
-formatPostalCode("〒１００－０００１");     // "100-0001"
-formatPostalCode("100 0001");             // "100-0001"
-formatPostalCode("100ー0001");            // "100-0001"
-formatPostalCode("1000001", { prefix: true });        // "〒100-0001"
-formatPostalCode("1000001", { separator: "" });       // "1000001"
-formatPostalCode("12345");                // null (not 7 digits)
+randomId();                              // e.g. "V1StGXR8Z5jdHi6BmyTq4" (21 characters)
+randomId(8);                             // e.g. "q7Kd9XpA"
+randomId(6, { charset: "numeric" });     // e.g. "480192"  (a one-time code)
+randomId(12, { charset: "hex" });        // e.g. "9f2c04ab71de"
+randomId(10, { charset: "unambiguous" });// no 0 O 1 I l
+randomId(5, { alphabet: "ABCDEFGHJKLMNPQRSTUVWXYZ23456789" });
 
-parsePostalCode("100-0001");
-// { digits: "1000001", upper: "100", lower: "0001" }
-
-isPostalCode("100-0001");                 // true
-isPostalCode("100-00011");                // false
+console.log(Object.keys(CHARSETS));
+// ["alphanumeric", "url-safe", "numeric", "lowercase", "uppercase",
+//  "lowercase-alphanumeric", "hex", "unambiguous"]
 ```
 
 ## API
 
-| Function | Result |
-|----------|--------|
-| `formatPostalCode(input, options?)` | Formatted string, or `null` if not a 7-digit postal code |
-| `parsePostalCode(input)` | `{ digits, upper, lower }`, or `null` |
-| `isPostalCode(input)` | `true` or `false` (never throws) |
+`randomId(length = 21, options?)`
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `separator` | `"-"` | Text between the first 3 and last 4 digits |
-| `prefix` | `false` | Add the postal mark `〒` in front |
+| `charset` | `"alphanumeric"` | A name from `CHARSETS` |
+| `alphabet` | — | Your own characters (2 to 65,536, no repeats). Use instead of `charset` |
+| `getRandomValues` | `crypto.getRandomValues` | Fills a `Uint32Array`. Replace for testing only |
 
-- Accepted input: 7 digits, or 3 + 4 digits split by one hyphen, dash, `ー`, or spaces. Full-width digits and a leading `〒` are fine.
-- Only the format is checked. The module does not know which codes are assigned. For that you need the data from Japan Post.
-- The older 3-digit and 5-digit codes are not supported.
-- Errors: `TypeError` if `input` is not a string (`isPostalCode` never throws).
+| Charset | Characters | Size |
+|---------|-----------|------|
+| `alphanumeric` | `A–Z a–z 0–9` | 62 |
+| `url-safe` | `A–Z a–z 0–9 _ -` | 64 |
+| `numeric` | `0–9` | 10 |
+| `lowercase` / `uppercase` | `a–z` / `A–Z` | 26 |
+| `lowercase-alphanumeric` | `0–9 a–z` | 36 |
+| `hex` | `0–9 a–f` | 16 |
+| `unambiguous` | letters and digits without `0 O 1 I l` | 57 |
+
+- **How random is it?** Each character adds `log2(alphabet size)` bits: about 5.95 for the 62-character default. 21 characters give about 125 bits, which is plenty to avoid collisions without checking. Short IDs (such as 6 digits) are only suitable when you check for duplicates.
+- **Unbiased:** random 32-bit numbers in the uneven leftover range are rejected instead of folded in with `%`. Every character is equally likely.
+- Uses Web Crypto: Node.js 19+ (global `crypto`) and all current browsers. On older Node.js, pass `getRandomValues` or set `globalThis.crypto`.
+- Errors: `TypeError` for wrong types, `RangeError` for a bad `length` (1 to 100,000), unknown `charset`, or an invalid `alphabet`.
 
 ## License
 
@@ -74,6 +78,7 @@ SOFTWARE.
 
 ## References
 
-- Japan Post. 郵便番号 (Postal codes).. https://www.post.japanpost.jp/zipcode/
-- Wikipedia. Postal codes in Japan.. https://en.wikipedia.org/wiki/Postal_codes_in_Japan
-- MDN Web Docs. String.prototype.normalize(). Mozilla.. https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/normalize
+- MDN Web Docs. Crypto: getRandomValues() method. Mozilla.. https://developer.mozilla.org/en-US/docs/Web/API/Crypto/getRandomValues
+- Wikipedia. Rejection sampling.. https://en.wikipedia.org/wiki/Rejection_sampling
+- Wikipedia. Fisher-Yates shuffle: modulo bias.. https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle#Modulo_bias
+- Ai, A. Nano ID (a similar, popular ID generator, for comparison).. https://github.com/ai/nanoid

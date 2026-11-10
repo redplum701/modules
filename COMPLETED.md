@@ -12,9 +12,9 @@ Tracks which modules in [`README.md`](./README.md) are finished. Modules are bui
 
 ## Progress
 
-**42 / 100 completed**
+**47 / 100 completed**
 
-- **Next up:** #59 `random-id`, #58 `uuid-v4`, #57 `base64`, #56 `query-string`, #55 `event-emitter`
+- **Next up:** #54 `memoize`, #53 `promise-timeout`, #52 `retry`, #51 `throttle`, #50 `debounce`
 - **Build order:** #100 → #1
 
 ## Completed
@@ -62,6 +62,11 @@ Tracks which modules in [`README.md`](./README.md) are finished. Modules are bui
 | 62 | [`email-validator`](./email-validator/) | 2026-11-09 | Practical email format check; unicode and lenient-dot options; no quoted/IP forms |
 | 61 | [`luhn-check`](./luhn-check/) | 2026-11-09 | Luhn mod 10 check and check digit calculation |
 | 60 | [`isbn-validator`](./isbn-validator/) | 2026-11-09 | ISBN-10/13 validation and conversion; hyphen positions not checked |
+| 59 | [`random-id`](./random-id/) | 2026-11-09 | Unbiased random IDs from Web Crypto; 8 charsets or a custom alphabet |
+| 58 | [`uuid-v4`](./uuid-v4/) | 2026-11-09 | UUID v4 built from 16 random bytes (RFC 9562); isUuid for versions 1-8 |
+| 57 | [`base64`](./base64/) | 2026-11-09 | UTF-8 safe Base64; standard/URL-safe, padding optional; bytes in and out |
+| 56 | [`query-string`](./query-string/) | 2026-11-09 | Query string parse/build with arrays, nesting, prototype-pollution safety |
+| 55 | [`event-emitter`](./event-emitter/) | 2026-11-09 | on / once / off / emit; symbol events; all listeners run even if one throws |
 | 42 | `base-converter` | Before 2026-11-09 | First version done as the starting point. Full version (fractions, negatives, BigInt) is still planned |
 
 ## Update Checklist
