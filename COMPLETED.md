@@ -12,10 +12,11 @@ Tracks which modules in [`README.md`](./README.md) are finished. Modules are bui
 
 ## Progress
 
-**57 / 100 completed**
+**61 / 100 completed**
 
-- **Next up:** #44 `iso-week-number`, #43 `date-diff`, #42 `base-converter` (full version), #41 `fibonacci`, #40 `combinatorics`
+- **Next up:** #39 `sieve-of-eratosthenes`, #38 `statistics`, #37 `color-adjust`, #36 `rgb-hsl-hsv`, #35 `contrast-ratio`
 - **Build order:** #100 → #1
+- Note: #42 `base-converter` is now the full version. It replaces the first version that was done before this list was started.
 
 ## Completed
 
@@ -77,7 +78,11 @@ Tracks which modules in [`README.md`](./README.md) are finished. Modules are bui
 | 47 | [`sort-by`](./sort-by/) | 2026-11-09 | Stable multi-key sort; asc/desc per key; nulls first/last; locale and numeric options |
 | 46 | [`group-by`](./group-by/) | 2026-11-09 | groupBy (object) and groupByMap (Map); matches the standard Object.groupBy |
 | 45 | [`closing-date`](./closing-date/) | 2026-11-09 | 締め日: closing date, billing period, payment date; weekend/holiday adjustment |
-| 42 | `base-converter` | Before 2026-11-09 | First version done as the starting point. Full version (fractions, negatives, BigInt) is still planned |
+| 44 | [`iso-week-number`](./iso-week-number/) | 2026-11-09 | ISO 8601 week and week-year, weeks in a year, week date to date, parse/format |
+| 43 | [`date-diff`](./date-diff/) | 2026-11-09 | daysBetween, years/months/days breakdown with a month-end rule, addMonths, addDays |
+| 42 | [`base-converter`](./base-converter/) | 2026-11-09 | Full version: bases 2-36, negatives, fractions with precision/rounding, BigInt; replaces the first version |
+| 41 | [`fibonacci`](./fibonacci/) | 2026-11-09 | BigInt Fibonacci by fast doubling, cache, negative indices, sequence, generator, isFibonacci |
+| 40 | [`combinatorics`](./combinatorics/) | 2026-11-09 | factorial, permutations, combinations, with repetition; exact BigInt |
 
 ## Update Checklist
 

@@ -1,4 +1,4 @@
-# closing-date
+# phone-number-formatter
 
 - **Author:** 紅梅 ([@redplum701](https://github.com/redplum701))
 - **Copyright:** © 2026 紅梅
@@ -8,68 +8,72 @@
 
 ## Description
 
-Closing-date (*shimebi*, 締め日) calculations for invoicing. It finds which closing date a transaction belongs to ("end of month", "the 20th"), the billing period around it, and the payment date ("closes at month end, paid at the end of next month"). Payment dates that fall on a weekend or holiday can be moved to the next or previous business day. Dates are handled as plain calendar dates, so time zones never shift the result.
+Formats Japanese phone numbers with hyphens. It cleans up messy input (full-width digits, odd hyphens, spaces, parentheses, `+81`), recognizes mobile, IP phone, toll-free, and other service numbers, and places landline hyphens using the official area code list from the Ministry of Internal Affairs and Communications (MIC), as of March 1, 2026.
 
 ## Usage
 
 ```js
-import { closingDate, billingPeriod, paymentDate } from "./closing-date.js";
+import { formatPhoneNumber, parsePhoneNumber, isPhoneNumber } from "./phone-number-formatter.js";
 
-// 月末締め
-closingDate("2026-11-10", "end").iso;        // "2026-11-30"
-closingDate("2026-02-15", "end").iso;        // "2026-02-28"
+formatPhoneNumber("09012345678");            // "090-1234-5678"
+formatPhoneNumber("０９０－１２３４－５６７８");  // "090-1234-5678"
+formatPhoneNumber("03 (1234) 5678");         // "03-1234-5678"
+formatPhoneNumber("0111234567");             // "011-123-4567"  (Sapporo)
+formatPhoneNumber("0422123456");             // "0422-12-3456"  (Musashino)
+formatPhoneNumber("0120123456");             // "0120-123-456"
+formatPhoneNumber("+81 90 1234 5678");       // "090-1234-5678"
 
-// 20日締め
-closingDate("2026-11-20", 20).iso;           // "2026-11-20" (the closing day itself is included)
-closingDate("2026-11-21", 20).iso;           // "2026-12-20"
-closingDate("2026-12-21", 20).iso;           // "2027-01-20"
+formatPhoneNumber("09012345678", { international: true }); // "+81 90-1234-5678"
+formatPhoneNumber("09012345678", { separator: " " });      // "090 1234 5678"
+formatPhoneNumber("12345");                  // null (not recognized)
 
-// 31日締め is the same as month end, in every month
-closingDate("2026-11-01", 31).iso;           // "2026-11-30"
+parsePhoneNumber("0422123456");
+// { type: "landline", digits: "0422123456", areaCode: "0422",
+//   groups: ["0422", "12", "3456"] }
 
-billingPeriod("2026-11-25", 20);
-// { start: { iso: "2026-11-21", ... }, end: { iso: "2026-12-20", ... } }
-
-// 月末締め 翌月末払い
-paymentDate("2026-11-10", "end").iso;        // "2026-12-31"
-
-// 20日締め 翌月10日払い
-paymentDate("2026-11-21", 20, { paymentDay: 10 }).iso;   // "2027-01-10"
-
-// 月末締め 翌々月15日払い
-paymentDate("2026-11-10", "end", { monthsLater: 2, paymentDay: 15 }).iso; // "2027-01-15"
-
-// Move a payment that falls on a weekend or holiday
-paymentDate("2026-10-10", "end", { paymentDay: 15, adjust: "next" });
-// 2026-11-15 is a Sunday: { iso: "2026-11-16", adjusted: true, ... }
-paymentDate("2026-10-10", "end", { paymentDay: 15, adjust: "previous" }).iso; // "2026-11-13"
-paymentDate("2026-10-10", "end", { paymentDay: 24, adjust: "next", holidays: ["2026-11-24"] }).iso; // "2026-11-25"
+isPhoneNumber("090-1234-5678");              // true
+isPhoneNumber("090-1234-567");               // false
 ```
 
 ## API
 
-All functions take a date as a `Date` (read in the local time zone), a `"YYYY-MM-DD"` string, or `{ year, month, day }`. Results are `{ year, month, day, iso }`.
-
 | Function | Result |
 |----------|--------|
-| `closingDate(date, closingDay)` | The first closing date on or after `date` |
-| `billingPeriod(date, closingDay)` | `{ start, end }`: the day after the previous closing date, through the closing date |
-| `paymentDate(date, closingDay, options?)` | The payment date, with an extra `adjusted` field |
+| `formatPhoneNumber(input, options?)` | Formatted string, or `null` if not recognized |
+| `parsePhoneNumber(input)` | `{ type, digits, groups, areaCode? }`, or `null` |
+| `isPhoneNumber(input)` | `true` or `false` (never throws) |
 
-`closingDay` is `1`–`31` or `"end"` (month end). A day past the end of a short month means that month's last day, so `31` and `"end"` are the same, and `30` in February is the 28th or 29th.
+| Option | Default | Description |
+|--------|---------|-------------|
+| `separator` | `"-"` | Text between the groups |
+| `international` | `false` | `+81` form without the leading 0 (`"+81 90-1234-5678"`) |
 
-| Option (`paymentDate`) | Default | Description |
-|------------------------|---------|-------------|
-| `monthsLater` | `1` | Months after the closing month (`0` = same month, `2` = the month after next) |
-| `paymentDay` | `"end"` | `1`–`31` or `"end"`, with the same rule for short months |
-| `adjust` | `"none"` | `"next"` or `"previous"`: move a payment on a Saturday, Sunday, or holiday to the next or previous business day (it can cross into another month) |
-| `holidays` | — | Dates to treat as non-business days (any accepted form). Weekends always count |
+**Recognized numbers**
 
-- A transaction **on** the closing day belongs to that closing (`closingDate("2026-11-20", 20)` is November 20).
-- Everything works on calendar dates (year, month, day), never on times of day, so time zones and daylight saving cannot move a result.
-- Years 1000 to 9999 are supported.
-- There is no built-in holiday list. Japanese public holidays change, so pass your own list. For general business-day arithmetic, see the planned `business-days` module.
-- Errors: `TypeError` for unsupported types. `RangeError` for invalid calendar dates (`"2026-02-30"`), an invalid `closingDay`, `paymentDay`, `monthsLater`, or `adjust`, or a result outside the supported years.
+| Type | Prefix | Digits | Grouping |
+|------|--------|--------|----------|
+| `landline` | `0` + area code (see below) | 10 | `0AREA-LOCAL-XXXX` |
+| `mobile` | `060` `070` `080` `090` | 11 | `0X0-XXXX-XXXX` |
+| `ip-phone` | `050` | 11 | `050-XXXX-XXXX` |
+| `m2m` | `020` | 11 | `020-XXXX-XXXX` |
+| `toll-free` | `0120` | 10 | `0120-XXX-XXX` |
+| `toll-free` | `0800` | 10 or 11 | `0800-XXX-XXX` / `0800-XXX-XXXX` |
+| `navi-dial` | `0570` | 10 | `0570-XXX-XXX` |
+| `mass-call` | `0180` | 10 | `0180-XXX-XXX` |
+| `info-fee` | `0990` | 10 | `0990-XXX-XXX` |
+
+**Input cleanup:** full-width digits and punctuation (NFKC), spaces, hyphens and dashes (including `ー`), parentheses, dots, and `+81` forms (including `+81 (0)90…`).
+
+**Landline area codes.** The official rule is: area code (1 to 4 digits after the `0`) plus local code always make 5 digits, followed by a 4-digit subscriber number. The module holds the area code list published by the MIC (as of 2026-03-01) and picks the longest area code that matches the start of the number. That puts the hyphens correctly for all areas with one exception:
+
+- **Area code `04`** (Saitama: Tokorozawa, Sayama, Iruma; Chiba: Kashiwa, Noda, Nagareyama, Abiko, Kamogawa) is shared with the digit patterns of `042`–`049`. The area code alone cannot tell them apart; the local codes decide. This module does not hold local codes, so those numbers are grouped like `042-XXX-XXXX` and may be wrong.
+
+**Other notes**
+
+- Hyphen positions are a convention. The MIC defines the numbers and area codes, not where to write hyphens. Mobile and service numbers follow the usual styles.
+- Numbers must include the leading `0` (or `+81`). Short numbers such as `110` or `119` return `null`.
+- Area codes can change. Re-check against the MIC list when you update.
+- Errors: `TypeError` if `input` is not a string (`isPhoneNumber` never throws).
 
 ## License
 
@@ -97,6 +101,7 @@ SOFTWARE.
 
 ## References
 
-- ISO. ISO 8601: Date and time format (calendar dates, YYYY-MM-DD).. https://en.wikipedia.org/wiki/ISO_8601
-- Wikipedia. Invoice.. https://en.wikipedia.org/wiki/Invoice
-- MDN Web Docs. Date.UTC(). Mozilla.. https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/UTC
+- Ministry of Internal Affairs and Communications (Japan). 市外局番の一覧 (List of area codes), as of March 1, 2026.. https://www.soumu.go.jp/main_content/000141817.pdf
+- Ministry of Internal Affairs and Communications (Japan). 電話番号に関するQ&A (Telephone number Q&A).. https://www.soumu.go.jp/main_sosiki/joho_tsusin/top/tel_number/q_and_a.html
+- Ministry of Internal Affairs and Communications (Japan). 電気通信番号制度 (Telecommunications numbering).. https://www.soumu.go.jp/main_sosiki/joho_tsusin/top/tel_number/shigai_list.html
+- MDN Web Docs. String.prototype.normalize(). Mozilla.. https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/normalize
